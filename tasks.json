@@ -1,0 +1,26 @@
+[
+  {
+    "id": "task1",
+    "title": "Design UI",
+    "desc": "Create wireframes and mockups",
+    "columnIndex": 1
+  },
+  {
+    "id": "task2",
+    "title": "Set Up Backend",
+    "desc": "Initialize Flask server",
+    "columnIndex": 2
+  },
+  {
+    "id": "task3",
+    "title": "Write Docs",
+    "desc": "Add documentation to README",
+    "columnIndex": 0
+  },
+  {
+    "id": "task1747548663309",
+    "title": "Doctor",
+    "desc": "Appointment",
+    "columnIndex": 1
+  }
+]

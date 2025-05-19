@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Board</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #1e1e1e, #121212);
+      color: #fff;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.75rem;
+      margin-top: 1.5rem;
+      color: #00e0ff;
+      letter-spacing: 1px;
+    }
+
+    .board {
+      display: flex;
+      gap: 1.5rem;
+      padding: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .column {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      width: 260px;
+      min-height: 450px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      transition: transform 0.3s ease;
+    }
+
+    .column h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-size: 1.4rem;
+      color: #ffffffbb;
+      border-bottom: 1px solid #ffffff22;
+      padding-bottom: 0.5rem;
+    }
+
+    .task {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+      cursor: grab;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .task:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: scale(1.02);
+    }
+
+    .task strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .task p {
+      font-size: 0.85rem;
+      margin: 0;
+      color: #cccccc;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin: 1rem auto;
+      justify-content: center;
+    }
+
+    .actions input, .actions button {
+      padding: 0.5rem;
+      border: none;
+      border-radius: 6px;
+    }
+
+    .actions input {
+      width: 200px;
+    }
+
+    .actions button {
+      background-color: #00e0ff;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .delete-btn, .edit-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #ff5c5c;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 6px;
+      cursor: pointer;
+      font-size: 0.7rem;
+    }
+
+    .edit-btn {
+      right: 50px;
+      background: #ffa500;
+    }
+  </style>
+</head>
+<body>
+  <h1>📁 Task Board</h1>
+  <div class="actions">
+    <input type="text" id="taskTitle" placeholder="Task title" />
+    <input type="text" id="taskDesc" placeholder="Task description" />
+    <button onclick="addTask()">Add Task</button>
+  </div>
+  <div class="board">
+    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>To Do</h2>
+    </div>
+    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>In Progress</h2>
+    </div>
+    <div class="column" ondrop="drop(event)" ondragover="allowDrop(event)">
+      <h2>Done</h2>
+    </div>
+  </div>
+
+  <script>
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    async function drop(ev) {
+      ev.preventDefault();
+      const data = ev.dataTransfer.getData("text");
+      const task = document.getElementById(data);
+      const column = ev.target.closest('.column');
+      const newColumnIndex = [...document.querySelectorAll('.column')].indexOf(column);
+      column.appendChild(task);
+
+      // Update backend with new column
+      const updatedTask = {
+        id: task.id,
+        title: task.querySelector("strong").innerText,
+        desc: task.querySelector("p").innerText,
+        columnIndex: newColumnIndex
+      };
+
+      await fetch(`http://localhost:5000/tasks/${task.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedTask)
+      });
+    }
+
+    async function addTask() {
+      const title = document.getElementById("taskTitle").value.trim();
+      const desc = document.getElementById("taskDesc").value.trim();
+      if (!title) return;
+
+      const newTask = {
+        id: `task${Date.now()}`,
+        title,
+        desc,
+        columnIndex: 0
+      };
+
+      try {
+        const res = await fetch("http://localhost:5000/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newTask)
+        });
+        const savedTask = await res.json();
+
+        const task = document.createElement("div");
+        task.className = "task";
+        task.id = savedTask.id;
+        task.draggable = true;
+        task.ondragstart = drag;
+        task.innerHTML = `
+          <strong>${savedTask.title}</strong>
+          <p>${savedTask.desc}</p>
+          <button class="edit-btn" onclick="editTask('${task.id}')">Edit</button>
+          <button class="delete-btn" onclick="deleteTask('${task.id}')">X</button>
+        `;
+        document.querySelectorAll(".column")[0].appendChild(task);
+
+        document.getElementById("taskTitle").value = "";
+        document.getElementById("taskDesc").value = "";
+      } catch (err) {
+        console.error("Error adding task:", err);
+      }
+    }
+
+    async function deleteTask(id) {
+      try {
+        await fetch(`http://localhost:5000/tasks/${id}`, {
+          method: "DELETE"
+        });
+        const task = document.getElementById(id);
+        if (task) task.remove();
+      } catch (err) {
+        console.error("Error deleting task:", err);
+      }
+    }
+
+    async function editTask(id) {
+      const task = document.getElementById(id);
+      const newTitle = prompt("Update task title:", task.querySelector("strong").innerText);
+      const newDesc = prompt("Update task description:", task.querySelector("p").innerText);
+      if (newTitle === null && newDesc === null) return;
+
+      const columnIndex = [...document.querySelectorAll(".column")].findIndex(col => col.contains(task));
+
+      const updatedTask = {
+        id,
+        title: newTitle ?? task.querySelector("strong").innerText,
+        desc: newDesc ?? task.querySelector("p").innerText,
+        columnIndex
+      };
+
+      try {
+        await fetch(`http://localhost:5000/tasks/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedTask)
+        });
+
+        task.querySelector("strong").innerText = updatedTask.title;
+        task.querySelector("p").innerText = updatedTask.desc;
+      } catch (err) {
+        console.error("Error updating task:", err);
+      }
+    }
+
+    async function loadInitialTasks() {
+      const columns = document.querySelectorAll(".column");
+      try {
+        const res = await fetch("http://localhost:5000/tasks");
+        const tasks = await res.json();
+
+        tasks.forEach(taskData => {
+          const task = document.createElement("div");
+          task.className = "task";
+          task.id = taskData.id;
+          task.draggable = true;
+          task.ondragstart = drag;
+          task.innerHTML = `
+            <strong>${taskData.title}</strong>
+            <p>${taskData.desc}</p>
+            <button class="edit-btn" onclick="editTask('${task.id}')">Edit</button>
+            <button class="delete-btn" onclick="deleteTask('${task.id}')">X</button>
+          `;
+          columns[taskData.columnIndex].appendChild(task);
+        });
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+      }
+    }
+
+    window.onload = loadInitialTasks;
+  </script>
+</body>
+</html>
