@@ -12,28 +12,27 @@ This project allows users to **create**, **edit**, **delete**, and **drag-and-dr
 ---
 
 ## 📁 Project Structure
-
+ ```
 task-board/
 │
 ├── backend/
-│ ├── app.py # Flask API
-│ └── tasks.json # Task data (auto-created)
+│   ├── app.py               # Flask API
+│   └── tasks.json           # Task data (auto-created)
 │
 ├── frontend/
-│ ├── index.html # Frontend UI
-│ ├── src/
-│ │ └── input.css # Tailwind source file
-│ ├── dist/
-│ │ └── output.css # Compiled Tailwind CSS
-│ ├── tailwind.config.js # Tailwind config
-│ └── postcss.config.js # PostCSS config
+│   ├── index.html           # Frontend UI
+│   ├── src/
+│   │   └── input.css        # Tailwind source file
+│   ├── dist/
+│   │   └── output.css       # Compiled Tailwind CSS
+│   ├── tailwind.config.js   # Tailwind config
+│   └── postcss.config.js    # PostCSS config
 │
-├── package.json # Node.js config
+├── package.json             # Node.js config
 ├── package-lock.json
 ├── .gitignore
 └── README.md
-
-
+```
 ---
 
 ## 🔧 Setup Instructions
